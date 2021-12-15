@@ -19,6 +19,8 @@ model users {
   email          String           @unique @db.VarChar(255)
   password       String           @db.VarChar(255)
   profile        String           @default("none.png") @db.VarChar(255)
+  confirmed      Boolean          @default(false)
+  verified       Boolean          @default(false)
   created_at     DateTime         @default(now())
   updated_at     DateTime         @updatedAt
   auth           auth[]

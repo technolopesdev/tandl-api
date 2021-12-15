@@ -51,6 +51,82 @@ class UserController {
             });
         }
     }
+    public static async verify(req: Request, res: Response): Promise<Response> {
+        const { email, code } = req.body;
+        try {
+            const user = await prisma.users.findFirst({
+                where: {
+                    email
+                }
+            });
+            if(!user) return res.send({
+                success: false,
+                message: 'User not found!'
+            });
+            const auth = await prisma.auth.findFirst({
+                where: {
+                    user_id: user.id
+                }
+            });
+            if(!auth) return res.send({
+                success: false,
+                message: 'Can\'t authenticate your request'
+            });
+            if(auth.code !== code) return res.send({
+                success: false,
+                message: 'Invalid code!'
+            });
+            await prisma.auth.delete({
+                where: {
+                    id: auth.id
+                }
+            });
+            await prisma.users.update({
+                where: {
+                    id: user.id
+                },
+                data: {
+                    confirmed: true
+                }
+            });
+            return res.send({
+                success: true,
+                token: Utils.token(user.id)
+            });
+        }catch(e) {
+            return res.send({
+                success: false,
+                message: 'An error ocurred!'
+            });
+        }
+    }
+    public static async login(req: Request, res: Response): Promise<Response> {
+        const { email, password } = req.body;
+        try {
+            const user = await prisma.users.findFirst({
+                where: {
+                    email
+                }
+            });
+            if(!user) return res.send({
+                success: false,
+                message: 'User not found!'
+            });
+            if(!await argon2.verify(user.password, password)) return res.send({
+                success: false,
+                message: 'Invalid password or email'
+            });
+            return res.send({
+                success: true,
+                token: Utils.token(user.id)
+            });
+        }catch(e) {
+            return res.send({
+                success: false,
+                message: 'An error ocurred!'
+            });
+        }
+    }
 }
 
 export default UserController;
