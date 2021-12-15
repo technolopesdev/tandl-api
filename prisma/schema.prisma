@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id             String           @id @default(uuid())
+  first_name     String           @db.VarChar(255)
+  last_name      String           @db.VarChar(255)
+  username       String           @db.VarChar(255)
+  tag            String           @unique @db.VarChar(10)
+  email          String           @unique @db.VarChar(255)
+  password       String           @db.VarChar(255)
+  profile        String           @default("none.png") @db.VarChar(255)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  auth           auth[]
+  invites        invites[]
+  posts          posts[]
+  post_reactions post_reactions[]
+  comments       comments[]
+}
+
+model auth {
+  id         String   @id @default(uuid())
+  user       users    @relation(fields: [user_id], references: [id])
+  user_id    String
+  code       Int
+  created_at DateTime @default(now())
+}
+
+model invites {
+  id         String   @id @default(uuid())
+  from_id    String
+  user       users    @relation(fields: [to_id], references: [id])
+  to_id      String
+  created_at DateTime @default(now())
+}
+
+model posts {
+  id             String           @id @default(uuid())
+  isImage        Boolean          @default(false)
+  content        String           @db.Text
+  user           users            @relation(fields: [user_id], references: [id])
+  user_id        String
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  post_reactions post_reactions[]
+}
+
+model reactions {
+  id             Int              @id @default(autoincrement())
+  label          String
+  active         Boolean          @default(true)
+  post_reactions post_reactions[]
+}
+
+model post_reactions {
+  id          String    @id @default(uuid())
+  user        users     @relation(fields: [user_id], references: [id])
+  user_id     String
+  post        posts     @relation(fields: [post_id], references: [id])
+  post_id     String
+  reaction    reactions @relation(fields: [reaction_id], references: [id])
+  reaction_id Int
+}
+
+model comments {
+  id      String @id @default(uuid())
+  user    users  @relation(fields: [user_id], references: [id])
+  user_id String
+  content String @db.Text
+}
