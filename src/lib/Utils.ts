@@ -12,6 +12,9 @@ class Utils {
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min)) + min;
     }
+    public static tag(): string {
+        return `#${this.mathRand(1000,9999)}`;
+    }
 }
 
 export default Utils;
