@@ -23,6 +23,7 @@ class App {
         this.app.use(express.json());
         this.app.use(morgan('dev'));
         this.app.use(cors());
+        this.app.use('/cdn', express.static('public'));
     }
     private database(): void {
         /**

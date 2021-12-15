@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 import Utils from '../../lib/Utils';
 import sendMail from '../../lib/sendMail';
+import fs from 'fs/promises';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -121,6 +123,68 @@ class UserController {
                 token: Utils.token(user.id)
             });
         }catch(e) {
+            return res.send({
+                success: false,
+                message: 'An error ocurred!'
+            });
+        }
+    }
+    public static async index(req: Request, res: Response): Promise<Response> {
+        const { userId } = req;
+        try {
+            const user = await prisma.users.findFirst({ where: { id: userId }, include: {
+                invites: true,
+                posts: true
+            } });
+            if(!user) return res.send({
+                success: false,
+                message: 'User not found!'
+            });
+            return res.send({
+                success: true,
+                user
+            });
+        }catch(e) {
+            return res.send({
+                success: false,
+                message: 'An error ocurred!'
+            });
+        }
+    }
+    public static async changeProfileImage(req: Request, res: Response): Promise<Response> {
+        const { userId } = req;
+        try {
+            if(!req.file) return res.send({
+                success: false,
+                message: 'Can\'t get your file!'
+            });
+            const user = await prisma.users.findFirst({ where: { id: userId }, include: {
+                invites: true,
+                posts: true
+            } });
+            if(!user) {
+                await fs.unlink(path.resolve(__dirname, '..', '..', '..', 'public', req.file.filename));
+                return res.send({
+                    success: false,
+                    message: 'User not found!'
+                });
+            }
+            if(user.profile !== 'none.png') {
+                await fs.unlink(path.resolve(__dirname, '..', '..', '..', 'public', user.profile));
+            }
+            await prisma.users.update({
+                where: {
+                    id: user.id
+                },
+                data: {
+                    profile: req.file.filename
+                }
+            });
+            return res.send({
+                success: true
+            });
+        }catch(e) {
+            console.log(e);
             return res.send({
                 success: false,
                 message: 'An error ocurred!'
